@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unit 23 영단어 주관식 마스터</title>
+    <style>
+        body { font-family: 'Malgun Gothic', sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; color: #333; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); position: relative; }
+        h1 { text-align: center; color: #2c3e50; font-size: 24px; margin-bottom: 20px; }
+        
+        /* 탭 스타일 */
+        .tabs { display: flex; margin-bottom: 25px; border-bottom: 2px solid #e0e0e0; }
+        .tab { flex: 1; text-align: center; padding: 15px; cursor: pointer; background: #f8f9fa; font-weight: bold; color: #555; border: 1px solid #e0e0e0; border-bottom: none; transition: 0.3s; }
+        .tab:first-child { border-radius: 8px 0 0 0; }
+        .tab:last-child { border-radius: 0 8px 0 0; }
+        .tab.active { background: #3498db; color: white; border-color: #3498db; }
+        
+        /* 콘텐츠 영역 */
+        .content { display: none; }
+        .content.active { display: block; }
+        
+        /* 단어장 리스트 */
+        .study-controls { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; }
+        .study-controls button { padding: 8px 15px; border: 1px solid #3498db; background: white; color: #3498db; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .study-controls button.active { background: #3498db; color: white; }
+        
+        .word-list { list-style: none; padding: 0; margin: 0; }
+        .word-item { display: flex; justify-content: space-between; padding: 15px; border-bottom: 1px solid #f0f0f0; transition: background 0.2s; cursor: pointer; }
+        .word-item:hover { background: #f9f9f9; }
+        .eng-word { font-weight: bold; color: #e74c3c; font-size: 1.1em; }
+        .kor-mean { color: #2c3e50; font-size: 1.05em; font-weight: bold; }
+        
+        .hidden-text { background-color: #ccc; color: #ccc; border-radius: 4px; user-select: none; }
+        .hidden-text:hover { background-color: #bbb; color: #bbb; }
+        
+        /* 주관식 퀴즈 (개별 채점 방식) */
+        .quiz-intro { background: #e8f4fd; padding: 15px; border-radius: 8px; margin-bottom: 20px; color: #0056b3; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
+        .question-box { margin-bottom: 20px; padding: 20px; background: #fff; border: 1px solid #e0e0e0; border-left: 5px solid #3498db; border-radius: 8px; transition: 0.3s; }
+        .question-title { font-size: 1.2em; font-weight: bold; margin-bottom: 15px; color: #2c3e50; }
+        
+        .input-group { display: flex; gap: 10px; }
+        input[type="text"] { flex: 1; padding: 12px; font-size: 1.1em; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; }
+        input[type="text"]:focus { outline: none; border-color: #3498db; box-shadow: 0 0 5px rgba(52,152,219,0.3); }
+        input[type="text"]:disabled { background-color: #f8f9fa; color: #7f8c8d; }
+        
+        .check-btn { padding: 0 20px; background-color: #3498db; color: white; border: none; font-size: 1.1em; font-weight: bold; border-radius: 6px; cursor: pointer; transition: 0.2s; }
+        .check-btn:hover { background-color: #2980b9; }
+        .check-btn:disabled { background-color: #bdc3c7; cursor: not-allowed; }
+        
+        .result-box { margin-top: 15px; padding: 15px; background: #f8f9fa; border-radius: 6px; display: none; }
+        .result-msg { font-weight: bold; font-size: 1.1em; margin-bottom: 8px; }
+        .example-sent { color: #555; font-size: 0.95em; font-style: italic; }
+        .correct { color: #2ecc71; }
+        .wrong { color: #e74c3c; }
+
+        .next-btn { width: 100%; padding: 15px; background-color: #f39c12; color: white; border: none; font-size: 1.2em; font-weight: bold; border-radius: 8px; cursor: pointer; margin-top: 15px; display: none; }
+        .next-btn:hover { background-color: #e67e22; }
+
+        /* 콤보 이펙트 애니메이션 */
+        #combo-effect {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0);
+            font-size: 4em; font-weight: bold; color: #ff9f43; text-shadow: 3px 3px 0 #ee5253, -2px -2px 0 #fff;
+            pointer-events: none; opacity: 0; z-index: 9999;
+        }
+        @keyframes popCombo {
+            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+            50% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="combo-effect"></div>
+
+<div class="container">
+    <h1>📖 Unit 23 단어장 및 주관식 CBT (총 30단어)</h1>
+    
+    <div class="tabs">
+        <div class="tab active" onclick="switchTab('study')">📝 단어장 암기</div>
+        <div class="tab" onclick="switchTab('test-en-ko')">🎯 주관식 (영 ➔ 한)</div>
+        <div class="tab" onclick="switchTab('test-ko-en')">🎯 주관식 (한 ➔ 영)</div>
+    </div>
+
+    <!-- 1. 단어장 화면 -->
+    <div id="study" class="content active">
+        <div class="study-controls">
+            <button class="active" onclick="setStudyMode('all', this)">모두 보기</button>
+            <button onclick="setStudyMode('hide-ko', this)">뜻 가리기</button>
+            <button onclick="setStudyMode('hide-en', this)">단어 가리기</button>
+        </div>
+        <div style="text-align:center; color:#666; margin-bottom:15px; font-size:0.9em;">
+            💡 아이템을 클릭하면 숨겨진 내용이 보이며 미국식 영어 발음이 재생됩니다.
+        </div>
+        <ul class="word-list" id="wordListContainer"></ul>
+    </div>
+
+    <!-- 2. 영 -> 한 주관식 -->
+    <div id="test-en-ko" class="content">
+        <div class="quiz-intro">
+            <span>💡 영어 단어를 보고 한글 뜻을 입력한 후 확인을 누르세요.</span>
+            <span id="page-info-en-ko"></span>
+        </div>
+        <div id="quizEnKoContainer"></div>
+        <button id="next-en-ko" class="next-btn" onclick="nextPage('en-ko')">다음 10문제 풀기 ➔</button>
+    </div>
+
+    <!-- 3. 한 -> 영 주관식 -->
+    <div id="test-ko-en" class="content">
+        <div class="quiz-intro">
+            <span>💡 한글 뜻을 보고 영어 단어를 입력한 후 확인을 누르세요.</span>
+            <span id="page-info-ko-en"></span>
+        </div>
+        <div id="quizKoEnContainer"></div>
+        <button id="next-ko-en" class="next-btn" onclick="nextPage('ko-en')">다음 10문제 풀기 ➔</button>
+    </div>
+</div>
+
+<script>
+    const vocab = [
+        {en: "dice", ko: "주사위", ex: "He rolled the dice while playing the board game."},
+        {en: "rude", ko: "무례한, 버릇없는", ex: "Talking about someone's weight can be rude."},
+        {en: "cargo", ko: "(배·비행기의) 화물", ex: "Divers found gold in the sunken ship's cargo."},
+        {en: "evaporate", ko: "(액체가) 증발하다", ex: "On a humid day, sweat does not evaporate fast."},
+        {en: "absorb", ko: "흡수하다, 빨아들이다", ex: "I used a sponge to absorb spilled coffee."},
+        {en: "weed", ko: "잡초", ex: "He made me pull out the weeds in the garden."},
+        {en: "cultured", ko: "교양 있는, 세련된", ex: "The gentleman is well-mannered and cultured."},
+        {en: "routine", ko: "일상, 판에 박힌 일", ex: "Taking a walk every evening is part of his routine."},
+        {en: "costly", ko: "비용이 많이 드는", ex: "The trip to Cuba was costly, but it was worth it."},
+        {en: "alert", ko: "경보, 경계, 경계하는, 기민한", ex: "A tornado alert was broadcast on the news. / Meerkats always stay alert for predators."},
+        {en: "collar", ko: "칼라, 깃", ex: "My grandfather wears a shirt with a blue collar on special days."},
+        {en: "ban", ko: "금지하다", ex: "The government banned books that criticize them."},
+        {en: "quite", ko: "꽤, 상당히", ex: "Samantha is quite good at playing the cello."},
+        {en: "overseas", ko: "해외에, 해외로", ex: "My brother studied English to work overseas."},
+        {en: "privacy", ko: "사생활, 프라이버시", ex: "You need to respect the privacy of others."},
+        {en: "arise", ko: "일어나다, 발생하다", ex: "Typhoons arise in the Northwestern Pacific."},
+        {en: "inspire", ko: "영감을 주다, 격려하다", ex: "Her lecture inspired me to dream about my future."},
+        {en: "souvenir", ko: "기념품", ex: "She usually buys local artwork as a souvenir."},
+        {en: "probably", ko: "아마도", ex: "He is probably the greatest actor of all time."},
+        {en: "central", ko: "중심의, 중앙의, 중요한, 중심적인", ex: "The bank is in the central part of the town. / Rivers played a central role in the development of civilizations."},
+        {en: "overhear", ko: "우연히 듣다, 엿듣다", ex: "I overheard a conversation between two girls on the bus."},
+        {en: "hexagon", ko: "육각형", ex: "Honeycomb cells are in the shape of a hexagon."},
+        {en: "previous", ko: "이전의", ex: "Our new classmate was a hockey player at her previous school."},
+        {en: "renowned", ko: "유명한", ex: "My uncle is a renowned physicist who is on television."},
+        {en: "convenient", ko: "편리한, 간편한", ex: "There's nothing more convenient than having things delivered to my house."},
+        {en: "pedestrian", ko: "보행자", ex: "Pedestrians are waiting for a signal to cross."},
+        {en: "beneath", ko: "아래에", ex: "The golden sand beneath my feet felt warm."},
+        {en: "dwarf", ko: "난쟁이", ex: "The seven dwarfs helped Snow White when she was in danger."},
+        {en: "anticipate", ko: "예상하다, 기대하다", ex: "Anticipate good things and work hard to make them happen."},
+        {en: "regret", ko: "후회, 유감, 후회하다", ex: "He said he felt great regret for his past errors. / I deeply regret buying all these useless things."}
+    ];
+
+    const ITEMS_PER_PAGE = 10;
+    let currentStudyMode = 'all';
+    let comboStreak = 0;
+    
+    const testState = {
+        'en-ko': { words: [], page: 0, answeredCount: 0 },
+        'ko-en': { words: [], page: 0, answeredCount: 0 }
+    };
+
+    const praises = [
+        { text: "정답", lang: "ko-KR" },
+        { text: "Very good", lang: "en-US" },
+        { text: "Excellent", lang: "en-US" },
+        { text: "Fantastic", lang: "en-US" },
+        { text: "Amazing", lang: "en-US" },
+        { text: "Awesome", lang: "en-US" },
+        { text: "Brilliant", lang: "en-US" },
+        { text: "Perfect", lang: "en-US" },
+        { text: "Incredible", lang: "en-US" },
+        { text: "Unbelievable", lang: "en-US" }
+    ];
+
+    function renderStudyList() {
+        const container = document.getElementById('wordListContainer');
+        container.innerHTML = '';
+        vocab.forEach((word, idx) => {
+            const li = document.createElement('li');
+            li.className = 'word-item';
+            let enClass = currentStudyMode === 'hide-en' ? 'eng-word hidden-text' : 'eng-word';
+            let koClass = currentStudyMode === 'hide-ko' ? 'kor-mean hidden-text' : 'kor-mean';
+            li.innerHTML = `<span class="${enClass}" id="st-en-${idx}">🔊 ${word.en}</span><span class="${koClass}" id="st-ko-${idx}">${word.ko}</span>`;
+            
+            li.onclick = () => {
+                document.getElementById(`st-en-${idx}`).classList.remove('hidden-text');
+                document.getElementById(`st-ko-${idx}`).classList.remove('hidden-text');
+                speakWordOnly(word.en);
+            };
+            container.appendChild(li);
+        });
+    }
+
+    function setStudyMode(mode, btnElement) {
+        currentStudyMode = mode;
+        document.querySelectorAll('.study-controls button').forEach(btn => btn.classList.remove('active'));
+        btnElement.classList.add('active');
+        renderStudyList();
+    }
+
+    function speakWordOnly(text) {
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'en-US';
+            utterance.rate = 0.9;
+            const voices = window.speechSynthesis.getVoices();
+            const usVoice = voices.find(voice => voice.lang === 'en-US' || voice.name.includes('US'));
+            if (usVoice) utterance.voice = usVoice;
+            window.speechSynthesis.speak(utterance);
+        }
+    }
+
+    function speakWordAndPraise(wordEn, comboCount) {
+        if (!('speechSynthesis' in window)) return;
+        window.speechSynthesis.cancel();
+        
+        const utteranceWord = new SpeechSynthesisUtterance(wordEn);
+        utteranceWord.lang = 'en-US';
+        utteranceWord.rate = 0.9;
+        const voices = window.speechSynthesis.getVoices();
+        const usVoice = voices.find(v => v.lang === 'en-US' || v.name.includes('US'));
+        if (usVoice) utteranceWord.voice = usVoice;
+
+        utteranceWord.onend = () => {
+            let pIdx = (comboCount - 1) % praises.length;
+            const praise = praises[pIdx];
+            const utterancePraise = new SpeechSynthesisUtterance(praise.text);
+            utterancePraise.lang = praise.lang;
+            utterancePraise.rate = 1.0;
+            
+            if (praise.lang === 'ko-KR') {
+                const krVoice = voices.find(v => v.lang === 'ko-KR' || v.name.includes('Korean'));
+                if (krVoice) utterancePraise.voice = krVoice;
+            } else {
+                if (usVoice) utterancePraise.voice = usVoice;
+            }
+            window.speechSynthesis.speak(utterancePraise);
+        };
+        
+        window.speechSynthesis.speak(utteranceWord);
+    }
+
+    function shuffleArray(array) {
+        let arr = [...array];
+        for (let i = arr.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+        return arr;
+    }
+
+    function renderTestPage(mode) {
+        const state = testState[mode];
+        const container = document.getElementById(mode === 'en-ko' ? 'quizEnKoContainer' : 'quizKoEnContainer');
+        container.innerHTML = '';
+        document.getElementById(`next-${mode}`).style.display = 'none';
+        state.answeredCount = 0;
+        
+        const startIdx = state.page * ITEMS_PER_PAGE;
+        const endIdx = startIdx + ITEMS_PER_PAGE;
+        const pageWords = state.words.slice(startIdx, endIdx);
+
+        document.getElementById(`page-info-${mode}`).innerText = `[ 진행도: ${state.page + 1} / 3 페이지 ]`;
+
+        pageWords.forEach((word, index) => {
+            const qNum = startIdx + index + 1;
+            const questionText = mode === 'en-ko' ? word.en : word.ko;
+            const placeholder = mode === 'en-ko' ? '한글 뜻 입력 (엔터)' : '영어 단어 입력 (엔터)';
+            
+            let html = `
+                <div class="question-box" id="box_${mode}_${index}">
+                    <div class="question-title">Q${qNum}. ${questionText}</div>
+                    <div class="input-group">
+                        <input type="text" id="input_${mode}_${index}" placeholder="${placeholder}" autocomplete="off" onkeypress="if(event.key==='Enter') checkSingle('${mode}', ${index})">
+                        <button class="check-btn" id="btn_${mode}_${index}" onclick="checkSingle('${mode}', ${index})">확인</button>
+                    </div>
+                    
+                    <div class="result-box" id="result_${mode}_${index}">
+                        <div class="result-msg" id="msg_${mode}_${index}"></div>
+                        <div class="example-sent">📖 예문: ${word.ex}</div>
+                    </div>
+                </div>`;
+            container.innerHTML += html;
+        });
+    }
+
+    function showComboEffect(combo) {
+        const effectEl = document.getElementById('combo-effect');
+        effectEl.innerHTML = `🔥 ${combo} COMBO! 🔥`;
+        effectEl.style.animation = 'none';
+        void effectEl.offsetWidth; 
+        effectEl.style.animation = 'popCombo 1.5s ease-out forwards';
+    }
+
+    function checkSingle(mode, index) {
+        const inputEl = document.getElementById(`input_${mode}_${index}`);
+        const btnEl = document.getElementById(`btn_${mode}_${index}`);
+        const userAnswer = inputEl.value.trim().toLowerCase();
+        if (!userAnswer) return;
+
+        const state = testState[mode];
+        const startIdx = state.page * ITEMS_PER_PAGE;
+        const word = state.words[startIdx + index];
+        const resultBox = document.getElementById(`result_${mode}_${index}`);
+        const msgBox = document.getElementById(`msg_${mode}_${index}`);
+        const qBox = document.getElementById(`box_${mode}_${index}`);
+        
+        let isCorrect = false;
+        let correctAnswer = mode === 'en-ko' ? word.ko : word.en;
+
+        if (mode === 'ko-en') {
+            if (userAnswer === word.en.toLowerCase()) isCorrect = true;
+        } else {
+            const cleanUser = userAnswer.replace(/\s+/g, '');
+            const koParts = word.ko.split(',');
+            for (let part of koParts) {
+                const cleanPart = part.replace(/\(.*\)/g, '').replace(/\s+/g, '');
+                if (cleanUser && (cleanPart.includes(cleanUser) || cleanUser.includes(cleanPart))) {
+                    isCorrect = true; break;
+                }
+            }
+        }
+
+        resultBox.style.display = 'block';
+        inputEl.disabled = true;
+        btnEl.disabled = true;
+        state.answeredCount++;
+        
+        if (isCorrect) {
+            comboStreak++;
+            msgBox.innerHTML = `✅ 정답! (모범 답안: ${correctAnswer})`;
+            msgBox.className = 'result-msg correct';
+            qBox.style.borderLeftColor = '#2ecc71';
+            
+            showComboEffect(comboStreak);
+            speakWordAndPraise(word.en, comboStreak);
+        } else {
+            comboStreak = 0; 
+            msgBox.innerHTML = `❌ 오답 (정답: <b>${correctAnswer}</b>)`;
+            msgBox.className = 'result-msg wrong';
+            qBox.style.borderLeftColor = '#e74c3c';
+            
+            speakWordOnly(word.en);
+        }
+
+        if (state.answeredCount >= ITEMS_PER_PAGE || (startIdx + index + 1) >= vocab.length) {
+            const nextBtn = document.getElementById(`next-${mode}`);
+            if (state.page < 2) {
+                nextBtn.style.display = 'block';
+            } else {
+                nextBtn.style.display = 'block';
+                nextBtn.style.backgroundColor = '#7f8c8d';
+                nextBtn.innerText = '🎉 모든 문제를 완료했습니다!';
+                nextBtn.onclick = null;
+            }
+        }
+    }
+
+    function nextPage(mode) {
+        testState[mode].page++;
+        comboStreak = 0; 
+        renderTestPage(mode);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function switchTab(tabId) {
+        document.querySelectorAll('.content').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+        
+        document.getElementById(tabId).classList.add('active');
+        event.currentTarget.classList.add('active');
+        comboStreak = 0; 
+
+        if (tabId === 'test-en-ko') {
+            testState['en-ko'].words = shuffleArray(vocab);
+            testState['en-ko'].page = 0;
+            renderTestPage('en-ko');
+        } else if (tabId === 'test-ko-en') {
+            testState['ko-en'].words = shuffleArray(vocab);
+            testState['ko-en'].page = 0;
+            renderTestPage('ko-en');
+        }
+    }
+
+    window.onload = () => {
+        renderStudyList();
+    };
+</script>
+
+</body>
+</html>
